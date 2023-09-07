@@ -5,7 +5,6 @@
 
 bool activated = false;
 
-
 void PlayLayer_onQuit(gd::PlayLayer* self) {
     activated = false;
     std::cout << "PlayLayer off"<< std::endl;
@@ -20,7 +19,7 @@ matdash::cc::thiscall<void> PlayLayer_Update(gd::PlayLayer* self, float dt) {
         int counter = self->m_effectManager->m_itemValues[0] + 1;
 
         // i apologise, i CANNOT figure out a way to do this without getting it every frame, help me my brain is not able to handle this
-        
+
         auto label = (CCLabelBMFont *) self->getChildByTag(8345);
         auto label2 = (CCLabelBMFont *) self->getChildByTag(8346);
         auto counterlabel = (CCLabelBMFont *) self->getChildByTag(8348);
@@ -42,10 +41,21 @@ matdash::cc::thiscall<void> PlayLayer_Update(gd::PlayLayer* self, float dt) {
 
         plabel->setString(std::to_string((value + counter > 19 ? value + counter - 20 : value + counter)).c_str());
         
+        int predictionvalue2 = (value + counter + value2) > 19 ? value + counter + value2 - 20 : value + counter + value2;
+        int predictionvalue = value + counter > 19 ? value + counter - 20 : value + counter;
+        
         if((value + counter - 20 == 3) && (value != 3)) {
             plabel2->setString(std::to_string(value2).c_str());
         }
-        else plabel2->setString(std::to_string((value + counter + value2) > 19 ? value + counter + value2 - 20 : value + counter + value2).c_str());
+        else if((value + counter - 20 == 2) && (value != 2)) {
+            plabel2->setString(std::to_string(value2).c_str());
+        }
+
+        else if(predictionvalue2 < 0) {
+            plabel2->setString(std::to_string(value2).c_str());
+        }
+
+        else plabel2->setString(std::to_string(predictionvalue2).c_str());
     }
 
     matdash::orig<&PlayLayer_Update>(self, dt);
