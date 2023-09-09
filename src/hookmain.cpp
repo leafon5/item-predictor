@@ -152,17 +152,19 @@ void collect_hook(gd::GJBaseGameLayer* self, int itemID, int count) {
             auto label3 = CCLabelBMFont::create("0", "bigFont.fnt");
 
             // item value labels
-
+            label->setScale(0.5);
             label->setPosition({10, 280});
             label->setZOrder(100);
             label->setTag(8345);
             self->addChild(label);
 
+            label2->setScale(0.5);
             label2->setPosition({50, 280});
             label2->setZOrder(100);
             label2->setTag(8346);
             self->addChild(label2);
 
+            label3->setScale(0.5);
             label3->setPosition({90, 280});
             label3->setZOrder(100);
             label3->setTag(8348);
@@ -172,6 +174,8 @@ void collect_hook(gd::GJBaseGameLayer* self, int itemID, int count) {
 
             auto clabel = CCLabelBMFont::create("0", "bigFont.fnt");
             auto clabel2 = CCLabelBMFont::create("0", "bigFont.fnt");
+            clabel->setScale(0.5);
+            clabel2->setScale(0.5);
 
             clabel->setPosition({10, 300});
             clabel->setZOrder(100);
@@ -189,8 +193,9 @@ void collect_hook(gd::GJBaseGameLayer* self, int itemID, int count) {
             // prediction text
 
             auto predictionlabel = CCLabelBMFont::create("PREDICTION:", "bigFont.fnt");
+            predictionlabel->setScale(0.5);
 
-            predictionlabel->setPosition({50, 250});
+            predictionlabel->setPosition({55, 250});
             predictionlabel->setZOrder(100);
             predictionlabel->setTag(8347);
             self->addChild(predictionlabel);
@@ -199,6 +204,8 @@ void collect_hook(gd::GJBaseGameLayer* self, int itemID, int count) {
 
             auto plabel = CCLabelBMFont::create("0", "bigFont.fnt");
             auto plabel2 = CCLabelBMFont::create("0", "bigFont.fnt");
+            plabel->setScale(0.5);
+            plabel2->setScale(0.5);
 
             plabel->setPosition({10, 220});
             plabel->setZOrder(100);
