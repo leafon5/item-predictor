@@ -1,69 +1,152 @@
 #include "hookmain.hpp"
+#include "HitboxNode.hpp"
 
 #include <matdash/minhook.hpp>
 
 
 bool activated = false;
+bool inPlayLayer = false;
+std::vector<int> mojGroups = {
+    259,
+    250,
+    253,
+    254,
+    255,
+    264,
+    260,
+    256,
+    257,
+    252,
+    251,
+    262,
+    263,
+    265,
+    247,
+    248,
+    249,
+    246,
+    245,
+    243
+};
+
+
+int sectionForPos(float x) {
+    int section = x / 100;
+    if (section < 0)
+        section = 0;
+    return section;
+}
+
+HitboxNode* drawthingy;
 
 void PlayLayer_onQuit(gd::PlayLayer* self) {
     activated = false;
+    if(drawthingy) drawthingy->clear();
+    inPlayLayer = false;
     std::cout << "PlayLayer off"<< std::endl;
-
     matdash::orig<&PlayLayer_onQuit, matdash::Thiscall>(self);
+}
+bool LevelEditorLayer_init(gd::LevelEditorLayer* self, gd::GJGameLevel* level) {
+    if(!matdash::orig<&LevelEditorLayer_init>(self, level)) return false;
+    activated = false;
+    if(drawthingy) drawthingy->clear();
+    inPlayLayer = false;
+    std::cout << "PlayLayer off" << std::endl;
+    return true;
+}
+bool PlayLayer_init(gd::PlayLayer* self, gd::GJGameLevel* level) {
+    if (!matdash::orig<&PlayLayer_init>(self, level)) return false;
+    inPlayLayer = true;
+    std::cout << "PlayLayer on" << std::endl;
+    return true;
 }
 
 matdash::cc::thiscall<void> PlayLayer_Update(gd::PlayLayer* self, float dt) {
-    if(activated) {
-        int value = self->m_effectManager->m_itemValues[1];
-        int value2 = self->m_effectManager->m_itemValues[2];
-        int counter = self->m_effectManager->m_itemValues[0] + 1;
+    if(!activated) {
+            matdash::orig<&PlayLayer_Update>(self, dt);
+            return {};
+    };
+    float xp = self->m_player1->getPositionX();
 
-        // i apologise, i CANNOT figure out a way to do this without getting it every frame, help me my brain is not able to handle this
+    int value = self->m_effectManager->m_itemValues[1];
+    int value2 = self->m_effectManager->m_itemValues[2];
+    int counter = self->m_effectManager->m_itemValues[0] + 1;
 
-        auto label = (CCLabelBMFont *) self->getChildByTag(8345);
-        auto label2 = (CCLabelBMFont *) self->getChildByTag(8346);
-        auto counterlabel = (CCLabelBMFont *) self->getChildByTag(8348);
+    // i apologise, i CANNOT figure out a way to do this without getting it every frame, help me my brain is not able to handle this
 
-        auto plabel = (CCLabelBMFont *) self->getChildByTag(8349);
-        auto plabel2 = (CCLabelBMFont *) self->getChildByTag(8350);
+    auto label = (CCLabelBMFont *) self->getChildByTag(8345);
+    auto label2 = (CCLabelBMFont *) self->getChildByTag(8346);
+    auto counterlabel = (CCLabelBMFont *) self->getChildByTag(8348);
 
-        auto clabel = (CCLabelBMFont *) self->getChildByTag(8351);
-        auto clabel2 = (CCLabelBMFont *) self->getChildByTag(8352);
+    auto plabel = (CCLabelBMFont *) self->getChildByTag(8349);
+    auto plabel2 = (CCLabelBMFont *) self->getChildByTag(8350);
 
-        
-        label->setString(std::to_string(value).c_str());
-        label2->setString(std::to_string(value2).c_str());
-        counterlabel->setString(std::to_string(counter).c_str());
+    auto clabel = (CCLabelBMFont *) self->getChildByTag(8351);
+    auto clabel2 = (CCLabelBMFont *) self->getChildByTag(8352);
 
-        if(value2 + counter + value > 39) value2 -= 20;
+    
+    label->setString(std::to_string(value).c_str());
+    label2->setString(std::to_string(value2).c_str());
+    counterlabel->setString(std::to_string(counter).c_str());
 
-        // EXPLANATION OF THIS MESS: if the sums are above 19, subtract 20 from them.
+    if(value2 + counter + value > 39) value2 -= 20;
 
-        plabel->setString(std::to_string((value + counter > 19 ? value + counter - 20 : value + counter)).c_str());
-        
-        int predictionvalue2 = (value + counter + value2) > 19 ? value + counter + value2 - 20 : value + counter + value2;
-        int predictionvalue = value + counter > 19 ? value + counter - 20 : value + counter;
-        
-        if((value + counter - 20 == 3) && (value != 3)) {
-            plabel2->setString(std::to_string(value2).c_str());
-        }
-        else if((value + counter - 20 == 2) && (value != 2)) {
-            plabel2->setString(std::to_string(value2).c_str());
-        }
+    // EXPLANATION OF THIS MESS: if the sums are above 19, subtract 20 from them.
 
-        else if(predictionvalue2 < 0) {
-            plabel2->setString(std::to_string(value2).c_str());
-        }
+    plabel->setString(std::to_string((value + counter > 19 ? value + counter - 20 : value + counter)).c_str());
+    
+    int predictionvalue2 = (value + counter + value2) > 19 ? value + counter + value2 - 20 : value + counter + value2;
+    int predictionvalue = value + counter > 19 ? value + counter - 20 : value + counter;
+    
+    // exceptions:
 
-        else plabel2->setString(std::to_string(predictionvalue2).c_str());
+    if((value + counter - 20 == 3) && (value != 3)) {
+        predictionvalue2 = value2;
     }
+    else if((value + counter - 20 == 2) && (value != 2)) {
+        predictionvalue2 = value2;
+    }
+
+    if(predictionvalue2 < 0) {
+        predictionvalue2 = value2;
+    }
+
+    plabel2->setString(std::to_string(predictionvalue2).c_str());
+    if(drawthingy)
+	    drawthingy->clear();
+
+		for (int s = sectionForPos(xp) - 5; s < sectionForPos(xp) + 6; ++s)
+		{
+			if (s < 0)
+				continue;
+			if (s >= self->m_sectionObjects->count())
+				break;
+			auto section = static_cast<CCArray*>(self->m_sectionObjects->objectAtIndex(s));
+			for (size_t i = 0; i < section->count(); ++i)
+			{
+				auto obj = static_cast<gd::GameObject*>(section->objectAtIndex(i));
+
+				if (obj->m_nObjectID != 749 && obj->getObjType() == gd::GameObjectType::kGameObjectTypeDecoration)
+					continue;
+                for (int i = 0; i < static_cast<int>(obj->m_groupCount); i++) {
+                    if(static_cast<int>(obj->m_groups[i]) == mojGroups[predictionvalue2]) {
+        				drawthingy->drawForObject(obj);
+                    }
+                }
+			}
+		}
 
     matdash::orig<&PlayLayer_Update>(self, dt);
     return {};
 }
 void collect_hook(gd::GJBaseGameLayer* self, int itemID, int count) {
     // because apparently playlayer::init is doing it too fast???
+    if(!inPlayLayer) {
+        matdash::orig<&collect_hook>(self, itemID, count);
+        return;
+    }
     if(!activated) {
+            
             auto label = CCLabelBMFont::create("0", "bigFont.fnt");
             auto label2 = CCLabelBMFont::create("0", "bigFont.fnt");
             auto label3 = CCLabelBMFont::create("0", "bigFont.fnt");
@@ -126,9 +209,16 @@ void collect_hook(gd::GJBaseGameLayer* self, int itemID, int count) {
             plabel2->setZOrder(100);
             plabel2->setTag(8350);
             self->addChild(plabel2);
+            
+            drawthingy = HitboxNode::getInstance();
+    
 
+            if(drawthingy) self->m_objectLayer->addChild(drawthingy, 999);
+    
+            drawthingy->setVisible(true);
+
+            activated = true;
     }
-    activated = true;
 
     if(itemID != 0) {
         if(count != -20) {
@@ -146,8 +236,10 @@ auto cocos(const char* symbol) {
 }
 
 void Hooks::init() {
+    matdash::add_hook<&PlayLayer_init>(gd::base + 0x1FB780);
     matdash::add_hook<&collect_hook>(gd::base + 0x111890);
     matdash::add_hook<&PlayLayer_onQuit, matdash::Thiscall>(gd::base + 0x20D810);
+    matdash::add_hook<&LevelEditorLayer_init>(gd::base + 0x15EE00);
     //   matdash::add_hook<&PlayLayer_update_, matdash::Thiscall>(gd::base + 0x2029c0);
     matdash::add_hook<&PlayLayer_Update>(gd::base + 0x2029C0);
     // perhaps?
