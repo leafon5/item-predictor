@@ -6,6 +6,8 @@
 
 bool activated = false;
 bool inPlayLayer = false;
+bool viewerActivated = true;
+
 std::vector<int> mojGroups = {
     259,
     250,
@@ -61,6 +63,29 @@ bool PlayLayer_init(gd::PlayLayer* self, gd::GJGameLevel* level) {
     return true;
 }
 
+matdash::cc::thiscall<void> dispatchKeyboardMSG(void* self, int key, bool down) {
+    if(!down) {
+        matdash::orig<&dispatchKeyboardMSG>(self, key, down);
+        return {};
+    } 
+
+    if(key == KEY_OEMPeriod && inPlayLayer) {
+        if(activated) {
+            if(viewerActivated == true) {
+                viewerActivated = false;
+                drawthingy->setVisible(false);
+            }
+            else if(viewerActivated == false) {
+                viewerActivated = true;
+                drawthingy->setVisible(true);
+            } 
+        }
+    }
+
+    matdash::orig<&dispatchKeyboardMSG>(self, key, down);
+    return {};
+}
+
 matdash::cc::thiscall<void> PlayLayer_Update(gd::PlayLayer* self, float dt) {
     if(!activated) {
             matdash::orig<&PlayLayer_Update>(self, dt);
@@ -84,7 +109,37 @@ matdash::cc::thiscall<void> PlayLayer_Update(gd::PlayLayer* self, float dt) {
     auto clabel = (CCLabelBMFont *) self->getChildByTag(8351);
     auto clabel2 = (CCLabelBMFont *) self->getChildByTag(8352);
 
-    
+    if(!viewerActivated && label->isVisible()) {
+        auto predlabel = (CCLabelBMFont *) self->getChildByTag(8347);
+
+        label->setVisible(false);
+        label2->setVisible(false);
+        counterlabel->setVisible(false);
+
+        plabel->setVisible(false);
+        plabel2->setVisible(false);
+
+        clabel->setVisible(false);
+        clabel2->setVisible(false);
+
+        predlabel->setVisible(false);
+    }
+    else if (viewerActivated && !label->isVisible()) {
+        auto predlabel = (CCLabelBMFont *) self->getChildByTag(8347);
+
+        label->setVisible(true);
+        label2->setVisible(true);
+        counterlabel->setVisible(true);
+
+        plabel->setVisible(true);
+        plabel2->setVisible(true);
+
+        clabel->setVisible(true);
+        clabel2->setVisible(true);
+
+        predlabel->setVisible(true);
+    }
+   if(viewerActivated) { 
     label->setString(std::to_string(value).c_str());
     label2->setString(std::to_string(value2).c_str());
     counterlabel->setString(std::to_string(counter).c_str());
@@ -135,7 +190,7 @@ matdash::cc::thiscall<void> PlayLayer_Update(gd::PlayLayer* self, float dt) {
                 }
 			}
 		}
-
+   }
     matdash::orig<&PlayLayer_Update>(self, dt);
     return {};
 }
@@ -222,17 +277,15 @@ void collect_hook(gd::GJBaseGameLayer* self, int itemID, int count) {
 
             if(drawthingy) self->m_objectLayer->addChild(drawthingy, 999);
     
-            drawthingy->setVisible(true);
-
             activated = true;
     }
 
-    if(itemID != 0) {
+    if(itemID != 0 && viewerActivated) {
         if(count != -20) {
             auto clabel = (CCLabelBMFont *) self->getChildByTag(8351);
             auto clabel2 = (CCLabelBMFont *) self->getChildByTag(8352);
-            if(itemID == 1) clabel->setString(std::to_string(count).c_str());
-            if(itemID == 2) clabel2->setString(std::to_string(count).c_str());
+            if(itemID == 1) clabel->setString(("+" + std::to_string(count)).c_str());
+            if(itemID == 2) clabel2->setString(("+" + std::to_string(count)).c_str());
         }
     }
     matdash::orig<&collect_hook>(self, itemID, count);
@@ -242,7 +295,11 @@ auto cocos(const char* symbol) {
     return GetProcAddress(mod, symbol);
 }
 
+auto address = cocos("?dispatchKeyboardMSG@CCKeyboardDispatcher@cocos2d@@QAE_NW4enumKeyCodes@2@_N@Z");
+
 void Hooks::init() {
+    matdash::add_hook<&dispatchKeyboardMSG>(address);
+
     matdash::add_hook<&PlayLayer_init>(gd::base + 0x1FB780);
     matdash::add_hook<&collect_hook>(gd::base + 0x111890);
     matdash::add_hook<&PlayLayer_onQuit, matdash::Thiscall>(gd::base + 0x20D810);

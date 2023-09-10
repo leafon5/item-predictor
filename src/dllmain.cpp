@@ -10,10 +10,7 @@
 
 
 void mod_main(HMODULE module) {
-
-
-    matdash::create_console();
+    // matdash::create_console();
 
     Hooks::init();
-
 }
